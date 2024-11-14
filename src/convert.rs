@@ -166,6 +166,37 @@ impl<S: ErrorSpan> DecodeScalar<S> for PathBuf {
     }
 }
 
+#[cfg(feature = "with-uuid-v1")]
+impl<S: ErrorSpan> DecodeScalar<S> for uuid::Uuid {
+    fn raw_decode(val: &Spanned<Literal, S>, ctx: &mut Context<S>) -> Result<uuid::Uuid, DecodeError<S>> {
+        match &**val {
+            Literal::String(ref s) => match uuid::Uuid::parse_str(s) {
+                Ok(u) => Ok(u),
+                Err(err) => {
+                    ctx.emit_error(DecodeError::conversion(val, err));
+                    Ok(uuid::Uuid::nil())
+                }
+            },
+            _ => {
+                ctx.emit_error(DecodeError::scalar_kind(Kind::String, val));
+                Ok(uuid::Uuid::nil())
+            }
+        }
+    }
+    fn type_check(type_name: &Option<Spanned<TypeName, S>>, ctx: &mut Context<S>) {
+        if let Some(typ) = type_name {
+            if typ.as_builtin() != Some(&BuiltinType::Uuid) {
+                ctx.emit_error(DecodeError::TypeName {
+                    span: typ.span().clone(),
+                    found: Some(typ.value.clone()),
+                    expected: ExpectedType::optional(BuiltinType::Uuid),
+                    rust_type: stringify!($typ),
+                });
+            }
+        }
+    }
+}
+
 impl<S: ErrorSpan> DecodeScalar<S> for Arc<Path> {
     fn raw_decode(
         val: &Spanned<Literal, S>,

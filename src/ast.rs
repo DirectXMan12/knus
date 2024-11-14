@@ -146,6 +146,8 @@ pub enum BuiltinType {
     F64,
     /// `base64` denotes binary bytes type encoded using base64 encoding
     Base64,
+    /// `uuid` denotes an rfc 4122 UUID
+    Uuid,
 }
 
 /// Scalar KDL value
@@ -199,6 +201,7 @@ impl BuiltinType {
             F32 => "f32",
             F64 => "f64",
             Base64 => "base64",
+            Uuid => "uuid",
         }
     }
     /// Returns `TypeName` structure for the builtin type

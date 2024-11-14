@@ -27,6 +27,7 @@ unicode-width = { version="0.2.0", optional=true }
 minicbor = { version="0.25.1", optional=true, features=["std", "derive"] }
 miette = "7.2.0"
 thiserror = "1.0.65"
+uuid = { version = "1.11.0", optional = true }
 
 [dev-dependencies]
 miette = { version="7.2.0", features=["fancy"] }
@@ -37,3 +38,4 @@ serde_json = "1.0"
 default = ["derive", "base64", "line-numbers"]
 derive = ["knus-derive"]
 line-numbers = ["unicode-width"]
+with-uuid-v1 = ["uuid"]
