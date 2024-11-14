@@ -58,6 +58,59 @@ macro_rules! impl_integer {
     };
 }
 
+macro_rules! impl_nonstd_integer {
+    ($typ: ident, $name:literal) => {
+        impl TryFrom<&Integer> for $typ {
+            type Error = <$typ as FromStr>::Err;
+            fn try_from(val: &Integer) -> Result<$typ, <$typ as FromStr>::Err> {
+                match val.0 {
+                    Radix::Bin => <$typ>::from_str_radix(&val.1, 2),
+                    Radix::Oct => <$typ>::from_str_radix(&val.1, 8),
+                    Radix::Dec => <$typ>::from_str(&val.1),
+                    Radix::Hex => <$typ>::from_str_radix(&val.1, 16),
+                }
+            }
+        }
+
+        impl<S: ErrorSpan> DecodeScalar<S> for $typ {
+            fn raw_decode(
+                val: &Spanned<Literal, S>,
+                ctx: &mut Context<S>,
+            ) -> Result<$typ, DecodeError<S>> {
+                match &**val {
+                    Literal::Int(ref value) => match value.try_into() {
+                        Ok(val) => Ok(val),
+                        Err(e) => {
+                            ctx.emit_error(DecodeError::conversion(val, e));
+                            Ok(0)
+                        }
+                    },
+                    _ => {
+                        ctx.emit_error(DecodeError::scalar_kind(Kind::String, val));
+                        Ok(0)
+                    }
+                }
+            }
+            fn type_check(type_name: &Option<Spanned<TypeName, S>>, ctx: &mut Context<S>) {
+                if let Some(typ) = type_name {
+                    if typ.as_str() != $name {
+                        let Ok(expected) = TypeName::from_str($name);
+                        ctx.emit_error(DecodeError::TypeName {
+                            span: typ.span().clone(),
+                            found: Some(typ.value.clone()),
+                            expected: ExpectedType::optional(expected),
+                            rust_type: stringify!($typ),
+                        });
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_nonstd_integer!(u128, "u128");
+impl_nonstd_integer!(i128, "i128");
+
 impl_integer!(i8, I8);
 impl_integer!(u8, U8);
 impl_integer!(i16, I16);
